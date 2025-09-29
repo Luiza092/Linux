@@ -3,14 +3,14 @@
 #include <iostream>
 #include <cstdlib>
 
-int main(int count, char* arg[]){
-	if(count < 3){
-		std::cout << "Usage: " << arg[0] << " <source-file> <destination-file>" << std::endl;
+int main(int argc, char* argv[]){
+	if(argc != 3){
+		std::cout << "Usage: " << argv[0] << " <source-file> <destination-file>" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
-	const char* src = arg[1];
-	const char* dest = arg[2];
+	const char* src = argv[1];
+	const char* dest = argv[2];
 
 	int s_fd = open(src, O_RDONLY);
 	if(s_fd == -1){
