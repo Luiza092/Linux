@@ -3,13 +3,13 @@
 #include <iostream>
 #include <cstdlib>
 
-int main(int count, char* arg[]){
-	if(count < 2){
-		std::cout << "Usage: " << arg[0] << " <file-path>" << std::endl;
+int main(int argc, char* argv[]){
+	if(argc != 2){
+		std::cout << "Usage: " << argv[0] << " <file-path>" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 
-	int fd = open(arg[1], O_RDONLY);
+	int fd = open(argv[1], O_RDONLY);
 	if(fd == -1){
 		perror("error opening file");
 		exit(EXIT_FAILURE);
