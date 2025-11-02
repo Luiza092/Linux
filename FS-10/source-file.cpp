@@ -17,13 +17,15 @@ int main(int argc, char** argv){
 
 	int src = open(srcPath, O_RDONLY);
 	if(src == -1){
-		std::cerr << "Error opening source file: " << strerror(errno) << std::endl;
+		std::cerr << "Error opening source file: " << strerror(errno)
+		 << std::endl;
 		exit(errno);
 	}
 
 	int dest = open(dstPath, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if(dest == -1){
-		std::cerr << "Error opening destination file: " << strerror(errno) << std::endl;
+		std::cerr << "Error opening destination file: " <<
+		strerror(errno) << std::endl;
 		close(src);
 		exit(errno);
 	}
@@ -49,7 +51,8 @@ int main(int argc, char** argv){
 				total_hole += (st.st_size - offset);
 				break;
 			}
-			std::cerr << "lseek(SEEK_DATA) errer: " << strerror(errno) << std::endl;
+			std::cerr << "lseek(SEEK_DATA) errer: " <<
+			strerror(errno) << std::endl;
 			close(src);
 			close(dest);
 			exit(errno);
@@ -65,7 +68,8 @@ int main(int argc, char** argv){
 		if(hole_start == -1){
 			if(errno == ENXIO) hole_start = st.st_size;
 			else{
-				std::cerr << "lseek( SEEK_HOLE) error: " << strerror(errno) << std::endl;
+				std::cerr << "lseek( SEEK_HOLE) error: " <<
+				strerror(errno) << std::endl;
 				close(src);
 				close(dest);
 				exit(errno);
@@ -74,7 +78,8 @@ int main(int argc, char** argv){
 
 		off_t _read = hole_start - data_start;
 		if(lseek(src, data_start, SEEK_SET) == -1){
-			std::cerr << "lseek(SEEK_SET) error: " << strerror(errno) << std::endl;
+			std::cerr << "lseek(SEEK_SET) error: " <<
+			strerror(errno) << std::endl;
 			close(src);
 			close(dest);
 			exit(errno);
@@ -102,6 +107,13 @@ int main(int argc, char** argv){
 		}
 		offset = hole_start;
 	}
+
+	if (offset < st.st_size) {
+    		off_t remaining = st.st_size - offset;
+    		total_hole += remaining;
+    		lseek(dest, st.st_size, SEEK_SET);
+	}
+
 
 	close(src);
         close(dest);
