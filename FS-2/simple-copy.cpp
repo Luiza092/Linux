@@ -27,7 +27,7 @@ int main(int argc, char* argv[]){
 
 	char buffer[4096];
 	ssize_t bytes_read;
-	while((bytes_read = read(s_fd, buffer, sizeof(buffer) - 1)) > 0){
+	while((bytes_read = read(s_fd, buffer, sizeof(buffer))) > 0){
 		ssize_t bytes_written = write(d_fd, buffer, bytes_read);
 		if(bytes_written == -1){
 			perror("error writing file");
