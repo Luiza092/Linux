@@ -1,16 +1,26 @@
 #include <iostream>
-#include <vector>
-#include <thread>
+#include <pthread.h>
 #include <cstdlib>
 #include <ctime>
 
-void partial_sum(const std::vector<int>& arr, size_t start, 
-	size_t end, long long& result){
+struct ThreadData {
+	const int* arr;
+	size_t start;
+	size_t end;
+	long long* results;
+	size_t id;
+};
+
+void* threadFunc(void* arg){
+	ThreadData* data = static_cast<ThreadData*>(arg);
+
 	long long sum = 0;
-	for(size_t i = start; i < end; ++i) {
-		sum += arr[i];
+	for(size_t i = data->start; i < data->end; ++i) {
+		sum += data->arr[i];
 	}
-	result = sum;
+
+	data->results[data->id] = sum;
+	return nullptr;
 }
 
 int main(int argc, char* argv[]) {
@@ -27,49 +37,62 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	std::vector<int> arr(N);
-	std::srand(std::time(nullptr));
+	int* arr = new int[N];
+	long long* partial_sums = new long long[M];
+
 	for(size_t i = 0; i < N; ++i) {
 		arr[i] = rand() % 100;
 	}
 
 	clock_t start_time = clock();
-	long long total_sum = 0;
+
+	long long single_sum = 0;
 	for(size_t i = 0; i < N; ++i) {
-		total_sum += arr[i];
+		single_sum += arr[i];
 	}
+
 	clock_t end_time = clock();
-	double duration_single = double(end_time - start_time) /
-		 CLOCKS_PER_SEC;
+	double duration_single = double(end_time - start_time) / CLOCKS_PER_SEC;
 
-	std::vector<std::thread> threads;
-	std::vector<long long> partial_sums(M, 0);
+	pthread_t* threads = new pthread_t[M];
+	ThreadData* tdata = new ThreadData[M];
 
-	size_t chunk_size = N / M;
+	size_t chunk = N / M;
 	start_time = clock();
+
 	for(size_t i = 0; i < M; ++i) {
-		size_t start = i * chunk_size;
-		size_t end = (i == M - 1) ? N : start + chunk_size;
-		threads.emplace_back(partial_sum, std::ref(arr), start,
-			 end, std::ref(partial_sums[i]));
+		tdata[i].arr = arr;
+		tdata[i].start = i * chunk;
+		tdata[i].end = (i == M - 1) ? N : (i + 1) * chunk;
+		tdata[i].results = partial_sums;
+		tdata[i].id = i;
+
+		pthread_create(&threads[i], nullptr, threadFunc, &tdata[i]);
 	}
 
-	for(auto& t : threads) t.join();
+	for(size_t i = 0; i < M; ++i) {
+		pthread_join(threads[i], nullptr);
+	}
 
-	long long total_sum_threads = 0;
-	for(auto s : partial_sums) total_sum_threads += s;
 	end_time = clock();
-	double duration_multi = double(end_time - start_time)
-		 / CLOCKS_PER_SEC;
+	double duration_threads = double(end_time - start_time) / CLOCKS_PER_SEC;
 
-	std::cout << "Time spent without threads: " << duration_single << "s\n";
-	std::cout << "Time spent with " << M << " threads: " 
-		 << duration_multi << "s\n";
-
-	if(total_sum != total_sum_threads) {
-		std::cerr << "Error: sums don't match!\n";
+	long long threaded_sum = 0;
+	for(size_t i = 0; i < M; ++i) {
+		threaded_sum += partial_sums[i];
 	}
+
+	std::cout << "Spent time without threads: " << duration_single << "s\n";
+	std::cout << "Spent time with " << M << " threads: " << duration_threads << "s\n";
+
+	if(single_sum != threaded_sum) {
+		std::cerr << "Error: sums dont match\n";
+	}
+
+	delete[] arr;
+	delete[] partial_sums;
+	delete[] threads;
+	delete[] tdata;
 
 	return 0;
 }
-
